@@ -3,6 +3,7 @@ vi /etc/sysconfig/network-scripts/ifcfg-ens33
 BOOTPROTO=static
 ONBOOT=yes
 IPADDR=192.168.3.8
+GATEWAY=192.168.3.1
 NETMASK=255.255.255.0
 DNS1=202.103.24.68
 DNS2=8.8.8.8
