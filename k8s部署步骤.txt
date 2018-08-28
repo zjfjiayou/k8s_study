@@ -9,7 +9,7 @@ DNS2=8.8.8.8
 
 service network restart
 安装vim
-yum install -y yum
+yum install -y vim
 关闭防火墙
 systemctl stop firewalld.service    #停止firewall
 systemctl disable firewalld.service #禁止firewall开机启动
