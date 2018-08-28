@@ -9,22 +9,34 @@ DNS1=202.103.24.68
 DNS2=8.8.8.8
 
 service network restart
+
 安装vim
 yum install -y vim
+
 关闭防火墙
 systemctl stop firewalld.service    #停止firewall
 systemctl disable firewalld.service #禁止firewall开机启动
 firewall-cmd --state                #查看防火墙状态
+
 禁用SELINUX
 setenforce 0
 vim /etc/selinux/config
 SELINUX=disabled
+
 禁用iptable
 vim /etc/sysctl.d/k8s.conf
 net.bridge.bridge-nf-call-ip6tables = 1
 net.bridge.bridge-nf-call-iptables = 1
 net.bridge.bridge-nf-call-arptables = 1
 sysctl -p /etc/sysctl.d/k8s.conf
+
+iptables -P FORWARD ACCEPT
+# 为docker服务创建一个systemd插件目录
+mkdir -p /etc/systemd/system/docker.service.d
+# 创建一个/etc/systemd/system/docker.service.d/port.conf配置文件
+vim /etc/systemd/system/docker.service.d/port.conf
+ExecStartPost=/usr/sbin/iptables -P FORWARD ACCEPT
+
 添加kubeadm源
 vim /etc/yum.repos.d/kubernetes.repo
 [kubernetes]
@@ -35,9 +47,12 @@ gpgcheck=1
 repo_gpgcheck=1
 gpgkey=http://mirrors.aliyun.com/kubernetes/yum/doc/yum-key.gpg
        http://mirrors.aliyun.com/kubernetes/yum/doc/rpm-package-key.gpg
+       
 yum makecache
+
 安装必要组件
 yum install -y kubeadm kubectl kubelet docker
+
 添加Docker源
 vim /etc/docker/daemon.json
 {
@@ -45,13 +60,16 @@ vim /etc/docker/daemon.json
 }
 systemctl daemon-reload
 systemctl restart docker
+
 去除kubectl对swap限制
 swapoff -a
 vim /etc/fstab
 free -m
+
 启动kubelet
 systemctl enable kubelet.service
 systemctl start kubelet.service
+
 准备镜像
 vim pull.sh
 #!/bin/bash
@@ -78,12 +96,16 @@ do
   docker rmi ${username}/${image}
 done
 unset ARCH version images username
+
 sh pull.sh
+
 准备安装master
 kubeadm init   --kubernetes-version=v1.11.2   --pod-network-cidr=10.244.0.0/16   --apiserver-advertise-address=xxx.xxx.xxx.xxx --token-ttl 0
+
 mkdir -p $HOME/.kube
 cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
 chown $(id -u):$(id -g) $HOME/.kube/config
+
 安装Pod Network
 curl -O https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
 kubectl apply -f  kube-flannel.yml
